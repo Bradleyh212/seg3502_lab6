@@ -1,12 +1,10 @@
 # SEG3502 — Laboratoire 6 — API REST Calculator
 
-Ce projet contient le code de départ Spring Boot du laboratoire 6. Il est basé sur l'exemple de convertisseur de température fourni dans le dépôt [converter-api](https://github.com/stephanesome/converter-api).
-
-L'objectif du livrable est d'adapter cet exemple pour développer un service Web REST de calculatrice avec documentation OpenAPI.
+Service Web REST de calculatrice développé avec Kotlin et Spring Boot pour l'exercice du laboratoire 6. Le projet est adapté de l'exemple [converter-api](https://github.com/stephanesome/converter-api).
 
 ## Prérequis
 
-- JDK 21, conformément à la configuration du projet.
+- JDK 21.
 - Une connexion Internet lors du premier lancement pour télécharger les dépendances.
 
 Le wrapper Gradle est inclus : aucune installation séparée de Gradle n'est nécessaire.
@@ -19,55 +17,37 @@ Dans un terminal ouvert à la racine du projet :
 ./gradlew bootRun
 ```
 
-L'API est accessible à l'adresse suivante :
+Le service écoute sur `http://localhost:8080`. Ouvrez [Swagger UI](http://localhost:8080/swagger-ui/index.html) pour consulter et essayer les opérations avec **Try it out**. Aucune page d'accueil n'est définie à la racine. Arrêtez le serveur avec `Ctrl+C`.
 
-```text
-http://localhost:8080
-```
+## Opérations REST
 
-Il s'agit d'un service REST : aucune page d'accueil n'est définie à la racine. Utilisez les points de terminaison ci-dessous ou Swagger UI. Arrêtez le serveur avec `Ctrl+C`.
+Toutes les opérations utilisent HTTP GET et retournent un nombre dans le corps de la réponse.
 
-## État actuel : convertisseur de température
+| Point de terminaison | Opération | Exemple | Résultat |
+| --- | --- | --- | --- |
+| `/calculator/add/{nombre1}/{nombre2}` | Addition | `/calculator/add/2/3` | `5.0` |
+| `/calculator/subtract/{nombre1}/{nombre2}` | Soustraction | `/calculator/subtract/2/3` | `-1.0` |
+| `/calculator/multiply/{nombre1}/{nombre2}` | Multiplication | `/calculator/multiply/-2/3.5` | `-7.0` |
+| `/calculator/divide/{nombre1}/{nombre2}` | Division | `/calculator/divide/7/2` | `3.5` |
 
-Le code de départ fournit actuellement ces opérations :
-
-| Méthode | Point de terminaison | Exemple de résultat |
-| --- | --- | --- |
-| GET | `/temperature-converter/celsius-fahrenheit/100` | `212.0` |
-| GET | `/temperature-converter/fahrenheit-celsius/32` | `0.0` |
-
-Exemple de requête après le démarrage du serveur :
+La soustraction et la division appliquent l'opération à `nombre1`, puis `nombre2`. Les nombres négatifs et décimaux sont acceptés; utilisez un point comme séparateur décimal.
 
 ```bash
-curl http://localhost:8080/temperature-converter/celsius-fahrenheit/100
+curl http://localhost:8080/calculator/add/2/3
+curl http://localhost:8080/calculator/divide/7/2
 ```
 
-Les valeurs sont retournées directement dans le corps de la réponse. Un gestionnaire d'exceptions retourne une réponse HTTP `400 Bad Request` avec le message `Unable to process request` lorsqu'une requête provoque une exception.
-
-## Travail à réaliser : calculatrice REST
-
-L'exercice évalué demande les quatre opérations suivantes :
-
-| Méthode | Point de terminaison | Opération |
-| --- | --- | --- |
-| GET | `/calculator/add/{nombre1}/{nombre2}` | Addition |
-| GET | `/calculator/subtract/{nombre1}/{nombre2}` | Soustraction |
-| GET | `/calculator/multiply/{nombre1}/{nombre2}` | Multiplication |
-| GET | `/calculator/divide/{nombre1}/{nombre2}` | Division |
-
-Ces points de terminaison ne sont pas encore implémentés dans le code de départ. La documentation OpenAPI doit également décrire les opérations de la calculatrice.
-
-Seul l'exercice de la section 6 de l'énoncé est évalué. Le code doit être enregistré dans le dépôt GitHub Classroom avant la date limite indiquée pour le cours.
+Une division par zéro retourne HTTP `400 Bad Request` avec le message `Cannot divide by zero`. Un paramètre non numérique retourne également HTTP `400`, avec le nom du paramètre invalide.
 
 ## Documentation OpenAPI
 
-La dépendance `springdoc-openapi-starter-webmvc-ui` est déjà présente. Une fois le serveur démarré, consultez :
+Les réponses `200` (résultat numérique) et `400` (paramètre invalide ou division par zéro) sont décrites dans OpenAPI.
 
-- Swagger UI : <http://localhost:8080/swagger-ui.html>
+La documentation est générée automatiquement par `springdoc-openapi-starter-webmvc-ui` à partir du contrôleur et de ses annotations.
+
+- Swagger UI : <http://localhost:8080/swagger-ui/index.html>
 - Spécification JSON : <http://localhost:8080/v3/api-docs>
 - Spécification YAML : <http://localhost:8080/v3/api-docs.yaml>
-
-La documentation est générée à partir des contrôleurs présents dans le projet.
 
 ## Vérification et construction
 
@@ -77,23 +57,26 @@ Exécuter les tests :
 ./gradlew test
 ```
 
-Construire le fichier JAR exécutable :
+Les tests vérifient les quatre opérations, les valeurs négatives et décimales, la division par zéro, les paramètres invalides, la présence des opérations dans OpenAPI et l'accès à Swagger UI.
+
+Construire et lancer le fichier JAR exécutable :
 
 ```bash
 ./gradlew bootJar
-```
-
-Le fichier est généré dans `build/libs/`. Avec le nom et la version actuels du projet, il peut être lancé ainsi :
-
-```bash
 java -jar build/libs/temp-converter-api-0.0.1-SNAPSHOT.jar
 ```
+
+Le nom Gradle et le package Kotlin du projet de départ sont conservés.
 
 ## Structure du projet
 
 - `src/main/kotlin/seg3x02/tempconverterapi/TempConverterApiApplication.kt` : point d'entrée Spring Boot.
-- `src/main/kotlin/seg3x02/tempconverterapi/controller/ConverterController.kt` : opérations REST du convertisseur de départ.
-- `src/main/kotlin/seg3x02/tempconverterapi/controller/ControllerExceptionHandler.kt` : gestion des exceptions.
+- `src/main/kotlin/seg3x02/tempconverterapi/controller/CalculatorController.kt` : quatre opérations de calcul et annotations OpenAPI.
+- `src/main/kotlin/seg3x02/tempconverterapi/controller/ControllerExceptionHandler.kt` : gestion des paramètres invalides et de la division par zéro.
 - `src/main/resources/application.properties` : configuration de l'application.
 - `src/test/` : tests du projet.
 - `build.gradle.kts` : dépendances et configuration de construction.
+
+## Remise
+
+Seul l'exercice de la section 6 de l'énoncé est évalué. Enregistrez le code dans le dépôt GitHub Classroom avant la date limite indiquée pour le cours.
